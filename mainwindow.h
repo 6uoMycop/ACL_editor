@@ -6,6 +6,8 @@
 #include <Windows.h>
 #include <AclAPI.h>
 #include <sddl.h>
+#include <lmcons.h>
+#include <string.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -29,7 +31,9 @@ private:
     QString fileName;
     ACL ACE;
 
-    QString showOwner();
+    QString sidToUsername(PSID pSid);
+    QString getOwner();
+    int showACL();
 
 };
 #endif // MAINWINDOW_H
