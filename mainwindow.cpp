@@ -6,6 +6,11 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->tableWidget_ACL->resizeColumnsToContents();
+    ui->widget_Container->setEnabled(false);
+    ui->pushButton_Save->setEnabled(false);
+    ui->pushButton_Cancel->setEnabled(false);
+    ui->pushButton_New->setEnabled(false);
 }
 
 MainWindow::~MainWindow()
@@ -79,6 +84,65 @@ QString MainWindow::sidToUsername(PSID pSid)
     }
 }
 
+// LocalFree return value!!!
+PSID MainWindow::usernameToSid(QString username)
+{
+    PSID pSid = NULL;
+    PTCHAR pDomain;
+    DWORD dwSidSize = 0, dwDomainSize = 0;
+    SID_NAME_USE use;
+    bool ret = true;
+    DWORD err = ERROR_SUCCESS;
+
+    ret = LookupAccountName(
+        NULL,
+        username.toStdWString().data(),
+        pSid,
+        &dwSidSize,
+        NULL,
+        &dwDomainSize,
+        &use);
+    if(!ret)
+    {
+        err = GetLastError();
+        if (err != ERROR_INSUFFICIENT_BUFFER)
+        {
+            return NULL;
+        }
+    }
+
+    pSid = (PSID)LocalAlloc(LMEM_FIXED, dwSidSize);
+    if (pSid == NULL)
+    {
+        return NULL;
+    }
+
+    pDomain = (PTCHAR)LocalAlloc(LMEM_FIXED, dwDomainSize * sizeof(TCHAR));
+    if (pDomain == NULL)
+    {
+        LocalFree(pSid);
+        return NULL;
+    }
+
+    ret = LookupAccountName(
+        NULL,
+        username.toStdWString().data(),
+        pSid,
+        &dwSidSize,
+        pDomain,
+        &dwDomainSize,
+        &use);
+    if(!ret)
+    {
+        LocalFree(pSid);
+        LocalFree(pDomain);
+        return NULL;
+    }
+
+    LocalFree(pDomain);
+    return pSid;
+}
+
 QString MainWindow::getOwner()
 {
     DWORD dwRtnCode = 0;
@@ -133,7 +197,6 @@ int MainWindow::showACL()
     PEXPLICIT_ACCESS entryList;
     ULONG entryCount;
     QString items[6] = { "" };
-    int maxLines;
 
     err = GetNamedSecurityInfo(
         fileName.toStdWString().data(),
@@ -163,8 +226,6 @@ int MainWindow::showACL()
 
     for (unsigned int i = 0; i < entryCount; i++)
     {
-        maxLines = 1;
-
         if (entryList[i].Trustee.TrusteeForm == TRUSTEE_IS_SID)
         {
             items[0] += sidToUsername(entryList[i].Trustee.ptstrName);
@@ -183,15 +244,36 @@ int MainWindow::showACL()
         // Specific
         if ((entryList[i].grfAccessPermissions & 0x01) == 0x01) // FILE_READ_DATA || FILE_LIST_DIRECTORY
         {
-            items[2] += QString::fromWCharArray(L"0x01\n");
+            if(isFile)
+            {
+                items[2] += QString::fromWCharArray(L"FILE_READ_DATA\n");
+            }
+            else
+            {
+                items[2] += QString::fromWCharArray(L"FILE_LIST_DIRECTORY\n");
+            }
         }
         if ((entryList[i].grfAccessPermissions & 0x02) == 0x02) // FILE_WRITE_DATA || FILE_ADD_FILE
         {
-            items[2] += QString::fromWCharArray(L"0x02\n");
+            if(isFile)
+            {
+                items[2] += QString::fromWCharArray(L"FILE_WRITE_DATA\n");
+            }
+            else
+            {
+                items[2] += QString::fromWCharArray(L"FILE_ADD_FILE\n");
+            }
         }
         if ((entryList[i].grfAccessPermissions & 0x04) == 0x04) // FILE_APPEND_DATA || FILE_ADD_SUBDIRECTORY
         {
-            items[2] += QString::fromWCharArray(L"0x04\n");
+            if(isFile)
+            {
+                items[2] += QString::fromWCharArray(L"FILE_APPEND_DATA\n");
+            }
+            else
+            {
+                items[2] += QString::fromWCharArray(L"FILE_ADD_SUBDIRECTORY\n");
+            }
         }
         if ((entryList[i].grfAccessPermissions & FILE_READ_EA) == FILE_READ_EA)
         {
@@ -203,7 +285,14 @@ int MainWindow::showACL()
         }
         if ((entryList[i].grfAccessPermissions & 0x20) == 0x20) // FILE_EXECUTE || FILE_TRAVERSE
         {
-            items[2] += QString::fromWCharArray(L"0x20\n");
+            if(isFile)
+            {
+                items[2] += QString::fromWCharArray(L"FILE_EXECUTE\n");
+            }
+            else
+            {
+                items[2] += QString::fromWCharArray(L"FILE_TRAVERSE\n");
+            }
         }
         if ((entryList[i].grfAccessPermissions & FILE_DELETE_CHILD) == FILE_DELETE_CHILD)
         {
@@ -282,18 +371,13 @@ int MainWindow::showACL()
         ui->tableWidget_ACL->insertRow(ui->tableWidget_ACL->rowCount());
         for (int ind = 0; ind < 6; ind++)
         {
+            QTableWidgetItem* tmp = new QTableWidgetItem(items[ind]);
+            tmp->setTextAlignment(Qt::AlignTop | Qt::AlignLeft);
             ui->tableWidget_ACL->setItem(
-                        ui->tableWidget_ACL->rowCount()-1,
+                        ui->tableWidget_ACL->rowCount() - 1,
                         ind,
-                        new QTableWidgetItem(items[ind]));
-            if(maxLines < items[ind].count(QLatin1Char('\n')))
-            {
-                maxLines = items[ind].count(QLatin1Char('\n'));
-            }
+                        tmp);
         }
-
-        // TODO: set row height
-
     }
 
     if(entryList)
@@ -304,10 +388,306 @@ int MainWindow::showACL()
     return 0;
 }
 
-void MainWindow::on_pushButton_Open_clicked()
+bool MainWindow::saveACE()
 {
-    fileName = QFileDialog::getOpenFileName(this, tr("Open file"), "", tr("Any File (*.*)"));
+    ACCESS_MASK accessMask = 0;
+    ACCESS_MODE accessMode = NOT_USED_ACCESS;
+    PSID pSid = NULL;
+    EXPLICIT_ACCESS ea;
+
+    //
+    // ACCESS_MASK
+    //
+
+    // specific
+    if(ui->checkBox_FILE_READ_DATA->isChecked())
+    {
+        accessMask ^= FILE_READ_DATA;
+    }
+    if(ui->checkBox_FILE_LIST_DIRECTORY->isChecked())
+    {
+        accessMask ^= FILE_LIST_DIRECTORY;
+    }
+    if(ui->checkBox_FILE_WRITE_DATA->isChecked())
+    {
+        accessMask ^= FILE_WRITE_DATA;
+    }
+    if(ui->checkBox_FILE_ADD_FILE->isChecked())
+    {
+        accessMask ^= FILE_ADD_FILE;
+    }
+    if(ui->checkBox_FILE_APPEND_DATA->isChecked())
+    {
+        accessMask ^= FILE_APPEND_DATA;
+    }
+    if(ui->checkBox_FILE_ADD_SUBDIRECTORY->isChecked())
+    {
+        accessMask ^= FILE_ADD_SUBDIRECTORY;
+    }
+    if(ui->checkBox_FILE_READ_EA->isChecked())
+    {
+        accessMask ^= FILE_READ_EA;
+    }
+    if(ui->checkBox_FILE_WRITE_EA->isChecked())
+    {
+        accessMask ^= FILE_WRITE_EA;
+    }
+    if(ui->checkBox_FILE_EXECUTE->isChecked())
+    {
+        accessMask ^= FILE_EXECUTE;
+    }
+    if(ui->checkBox_FILE_TRAVERSE->isChecked())
+    {
+        accessMask ^= FILE_TRAVERSE;
+    }
+    if(ui->checkBox_FILE_DELETE_CHILD->isChecked())
+    {
+        accessMask ^= FILE_DELETE_CHILD;
+    }
+    if(ui->checkBox_FILE_READ_ATTRIBUTES->isChecked())
+    {
+        accessMask ^= FILE_READ_ATTRIBUTES;
+    }
+    if(ui->checkBox_FILE_WRITE_ATTRIBUTES->isChecked())
+    {
+        accessMask ^= FILE_WRITE_ATTRIBUTES;
+    }
+
+    // standard
+    if(ui->checkBox_DELETE->isChecked())
+    {
+        accessMask ^= DELETE;
+    }
+    if(ui->checkBox_READ_CONTROL->isChecked())
+    {
+        accessMask ^= READ_CONTROL;
+    }
+    if(ui->checkBox_WRITE_DAC->isChecked())
+    {
+        accessMask ^= WRITE_DAC;
+    }
+    if(ui->checkBox_WRITE_OWNER->isChecked())
+    {
+        accessMask ^= WRITE_OWNER;
+    }
+    if(ui->checkBox_SYNCHRONIZE->isChecked())
+    {
+        accessMask ^= SYNCHRONIZE;
+    }
+
+    // other
+    if(ui->checkBox_ACCESS_SYSTEM_SECURITY->isChecked())
+    {
+        accessMask ^= ACCESS_SYSTEM_SECURITY;
+    }
+    if(ui->checkBox_MAXIMUM_ALLOWED->isChecked())
+    {
+        accessMask ^= MAXIMUM_ALLOWED;
+    }
+
+    // generic
+    if(ui->checkBox_GENERIC_ALL->isChecked())
+    {
+        accessMask ^= GENERIC_ALL;
+    }
+    if(ui->checkBox_GENERIC_EXECUTE->isChecked())
+    {
+        accessMask ^= GENERIC_EXECUTE;
+    }
+    if(ui->checkBox_GENERIC_WRITE->isChecked())
+    {
+        accessMask ^= GENERIC_WRITE;
+    }
+    if(ui->checkBox_GENERIC_READ->isChecked())
+    {
+        accessMask ^= GENERIC_READ;
+    }
+
+    //
+    // Access Mode
+    //
+
+    if(!ui->comboBox_AccessMode->currentIndex())
+    {
+        return false;
+    }
+
+    accessMode =
+            (ui->comboBox_AccessMode->currentIndex() == 1) ? GRANT_ACCESS :
+            (ui->comboBox_AccessMode->currentIndex() == 2) ? SET_ACCESS :
+            (ui->comboBox_AccessMode->currentIndex() == 3) ? DENY_ACCESS :
+            (ui->comboBox_AccessMode->currentIndex() == 4) ? REVOKE_ACCESS :
+                                                             NOT_USED_ACCESS;
+
+    //
+    // Trustee
+    //
+
+    if(!ui->lineEdit_SID->text().length())
+    {
+        return false;
+    }
+
+    ConvertStringSidToSid(ui->lineEdit_SID->text().toStdWString().data(), &pSid);
+
+
+    //
+    // Fill in ACE
+    //
+
+    ZeroMemory(&ea, sizeof(EXPLICIT_ACCESS));
+    ea.grfAccessPermissions             = accessMask;
+    ea.grfAccessMode                    = accessMode;
+    ea.grfInheritance                   = NO_INHERITANCE; // mb check this
+    ea.Trustee.pMultipleTrustee         = NULL;
+    ea.Trustee.MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE;
+    ea.Trustee.TrusteeForm              = TRUSTEE_IS_SID;
+    ea.Trustee.TrusteeType              = TRUSTEE_IS_USER;
+    ea.Trustee.ptstrName                = (LPWCH)pSid;
+
+
+    //
+    // Assign ACE
+    //
+
+
+    // TODO assign ACE (and check mb it already exists)
+
+
+
+
+
+
+
+
+
+
+    //
+    // Cleanup
+    //
+
+    LocalFree(pSid);
+    return true;
+}
+
+void MainWindow::on_pushButton_OpenDirectory_clicked()
+{
+    QFileDialog dialog(this);
+    dialog.setFileMode(QFileDialog::DirectoryOnly);
+    fileName = dialog.getExistingDirectory(this, "Open directory");
+    if(!fileName.length())
+    {
+        return;
+    }
+    ui->pushButton_New->setEnabled(true);
+    isFile = false;
     ui->lineEdit_FileName->setText(fileName);
     ui->lineEdit_Owner->setText(getOwner());
     showACL();
+    ui->tableWidget_ACL->resizeColumnsToContents();
+    ui->tableWidget_ACL->resizeRowsToContents();
+}
+
+void MainWindow::on_pushButton_OpenFile_clicked()
+{
+    fileName = QFileDialog::getOpenFileName(this, "Open file");
+    if(!fileName.length())
+    {
+        return;
+    }
+    ui->pushButton_New->setEnabled(true);
+    isFile = true;
+    ui->lineEdit_FileName->setText(fileName);
+    ui->lineEdit_Owner->setText(getOwner());
+    showACL();
+    ui->tableWidget_ACL->resizeColumnsToContents();
+    ui->tableWidget_ACL->resizeRowsToContents();
+}
+
+void MainWindow::on_pushButton_New_clicked()
+{
+    ui->pushButton_New->setEnabled(false);
+
+    QString items[6] = {
+        "UNSAVED",
+        "",
+        "EDIT",
+        "THIS",
+        "ROW",
+        "FIRST"
+    };
+    ui->tableWidget_ACL->insertRow(ui->tableWidget_ACL->rowCount());
+    for (int ind = 0; ind < 6; ind++)
+    {
+        QTableWidgetItem* tmp = new QTableWidgetItem(items[ind]);
+        tmp->setTextAlignment(Qt::AlignTop | Qt::AlignLeft);
+        ui->tableWidget_ACL->setItem(
+                    ui->tableWidget_ACL->rowCount() - 1,
+                    ind,
+                    tmp);
+    }
+    ui->tableWidget_ACL->resizeColumnsToContents();
+    ui->tableWidget_ACL->resizeRowsToContents();
+}
+
+void MainWindow::on_pushButton_Save_clicked()
+{
+    if(saveACE())
+    {
+        ui->pushButton_New->setEnabled(true);
+        ui->widget_Container->setEnabled(false);
+        ui->pushButton_Save->setEnabled(false);
+        ui->pushButton_Cancel->setEnabled(false);
+    }
+}
+
+void MainWindow::on_tableWidget_ACL_itemDoubleClicked(QTableWidgetItem *item)
+{
+    if(item->row() != ui->tableWidget_ACL->rowCount() - 1 &&
+            ui->tableWidget_ACL->item(ui->tableWidget_ACL->rowCount() - 1, 0)->text() == QString("UNSAVED"))
+    {
+        return;
+    }
+
+    ui->widget_Container->setEnabled(true);
+    ui->pushButton_Save->setEnabled(true);
+    ui->pushButton_Cancel->setEnabled(true);
+    ui->pushButton_New->setEnabled(false);
+
+    ui->checkBox_FILE_LIST_DIRECTORY->   setEnabled(!isFile);
+    ui->checkBox_FILE_ADD_FILE->         setEnabled(!isFile);
+    ui->checkBox_FILE_ADD_SUBDIRECTORY-> setEnabled(!isFile);
+    ui->checkBox_FILE_TRAVERSE->         setEnabled(!isFile);
+
+    ui->checkBox_FILE_READ_DATA->        setEnabled(isFile);
+    ui->checkBox_FILE_WRITE_DATA->       setEnabled(isFile);
+    ui->checkBox_FILE_APPEND_DATA->      setEnabled(isFile);
+    ui->checkBox_FILE_EXECUTE->          setEnabled(isFile);
+
+}
+
+void MainWindow::on_pushButton_Cancel_clicked()
+{
+    ui->pushButton_New->setEnabled(true);
+    ui->widget_Container->setEnabled(false);
+    ui->pushButton_Save->setEnabled(false);
+    ui->pushButton_Cancel->setEnabled(false);
+
+    if(ui->tableWidget_ACL->item(ui->tableWidget_ACL->rowCount() - 1, 0)->text() == QString("UNSAVED"))
+    {
+        ui->tableWidget_ACL->removeRow(ui->tableWidget_ACL->rowCount() - 1);
+    }
+}
+
+void MainWindow::on_pushButton_CheckName_clicked()
+{
+    PSID pSid = NULL;
+    LPTSTR sidStr = NULL;
+
+    pSid = usernameToSid(ui->lineEdit_Username->text());
+    ConvertSidToStringSid(pSid, &sidStr);
+    ui->lineEdit_SID->setText(QString::fromWCharArray(sidStr));
+
+    LocalFree(sidStr);
+    LocalFree(pSid);
 }

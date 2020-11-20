@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QFileDialog>
+#include <QTableWidget>
 #include <Windows.h>
 #include <AclAPI.h>
 #include <sddl.h>
@@ -23,17 +24,31 @@ public:
 
 
 private slots:
-    void on_pushButton_Open_clicked();
+    void on_pushButton_OpenDirectory_clicked();
+
+    void on_pushButton_OpenFile_clicked();
+
+    void on_pushButton_New_clicked();
+
+    void on_pushButton_Save_clicked();
+
+    void on_tableWidget_ACL_itemDoubleClicked(QTableWidgetItem *item);
+
+    void on_pushButton_Cancel_clicked();
+
+    void on_pushButton_CheckName_clicked();
 
 private:
     Ui::MainWindow *ui;
 
     QString fileName;
-    ACL ACE;
+    bool isFile;
 
     QString sidToUsername(PSID pSid);
+    PSID usernameToSid(QString username);
     QString getOwner();
     int showACL();
+    bool saveACE();
 
 };
 #endif // MAINWINDOW_H
