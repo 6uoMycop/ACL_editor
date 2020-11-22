@@ -38,17 +38,31 @@ private slots:
 
     void on_pushButton_CheckName_clicked();
 
+    void on_pushButton_Delete_clicked();
+
+    void on_tableWidget_ACL_itemClicked(QTableWidgetItem *item);
+
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow* ui;
 
-    QString fileName;
-    bool isFile;
+    QString              fileName;
+    bool                 isFile;
+    PSECURITY_DESCRIPTOR pSD = NULL;
+    PEXPLICIT_ACCESS     entryList;
+    PACL                 oldDACL = NULL;
+    ULONG                entryCount;
+    int                  selectedRow;
 
-    QString sidToUsername(PSID pSid);
-    PSID usernameToSid(QString username);
-    QString getOwner();
-    int showACL();
-    bool saveACE();
+    BOOL                 SetPrivilege(HANDLE hToken, LPCTSTR lpszPrivilege, BOOL bEnablePrivilege);
+    QString              sidToUsername(PSID pSid);
+    PSID                 usernameToSid(QString username);
+    QString              getOwner();
+    int                  showACL();
+    bool                 setACL(PACL newDACL);
+    bool                 saveACE();
+    bool                 deleteSelectedAce(int index);
+    void                 cleanupGlobals();
+    void                 revertEditorFormat();
 
 };
 #endif // MAINWINDOW_H

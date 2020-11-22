@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1536</width>
-    <height>660</height>
+    <height>626</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,13 +19,13 @@
   <property name="minimumSize">
    <size>
     <width>1536</width>
-    <height>650</height>
+    <height>626</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>1536</width>
-    <height>660</height>
+    <height>626</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -56,37 +56,10 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_Object">
-       <property name="text">
-        <string>Object:</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="4" rowspan="4">
       <widget class="Line" name="line_11">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_ACL">
-       <property name="text">
-        <string>DACL</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QPushButton" name="pushButton_OpenFile">
-       <property name="minimumSize">
-        <size>
-         <width>105</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>Open file...</string>
        </property>
       </widget>
      </item>
@@ -138,6 +111,44 @@
          <string>Permissions Other</string>
         </property>
        </column>
+      </widget>
+     </item>
+     <item row="3" column="0" colspan="4">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QPushButton" name="pushButton_Delete">
+         <property name="text">
+          <string>Delete selected entry</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_New">
+         <property name="text">
+          <string>New entry</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_Object">
+       <property name="text">
+        <string>Object:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="pushButton_OpenFile">
+       <property name="minimumSize">
+        <size>
+         <width>105</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Open file...</string>
+       </property>
       </widget>
      </item>
      <item row="0" column="5" rowspan="3" colspan="3">
@@ -611,13 +622,6 @@ REVOKE_ACCESS	- Indicates that all existing ACCESS_ALLOWED_ACE or SYSTEM_AUDIT_A
        </layout>
       </widget>
      </item>
-     <item row="3" column="0" colspan="4">
-      <widget class="QPushButton" name="pushButton_New">
-       <property name="text">
-        <string>New entry</string>
-       </property>
-      </widget>
-     </item>
      <item row="3" column="6">
       <widget class="QPushButton" name="pushButton_Cancel">
        <property name="text">
@@ -625,20 +629,16 @@ REVOKE_ACCESS	- Indicates that all existing ACCESS_ALLOWED_ACE or SYSTEM_AUDIT_A
        </property>
       </widget>
      </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_ACL">
+       <property name="text">
+        <string>DACL</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </widget>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1536</width>
-     <height>26</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>

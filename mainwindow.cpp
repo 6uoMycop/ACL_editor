@@ -11,11 +11,62 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_Save->setEnabled(false);
     ui->pushButton_Cancel->setEnabled(false);
     ui->pushButton_New->setEnabled(false);
+    ui->pushButton_Delete->setEnabled(false);
+
+    oldDACL = NULL;
+    entryList = NULL;
 }
 
 MainWindow::~MainWindow()
 {
+    cleanupGlobals();
     delete ui;
+}
+
+BOOL MainWindow::SetPrivilege(
+    HANDLE hToken,              // access token handle
+    LPCTSTR lpszPrivilege,   // name of privilege to enable/disable
+    BOOL bEnablePrivilege   // to enable or disable privilege
+)
+{
+    TOKEN_PRIVILEGES tp;
+    // Used by local system to identify the privilege
+    LUID luid;
+
+    if(!LookupPrivilegeValue(
+            NULL,                // lookup privilege on local system
+            lpszPrivilege,   // privilege to lookup
+            &luid))              // receives LUID of privilege
+    {
+        printf("LookupPrivilegeValue error: %lu\n", GetLastError());
+        return FALSE;
+    }
+
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = luid;
+    if(bEnablePrivilege)
+    {
+        tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    }
+    else
+    {
+        tp.Privileges[0].Attributes = 0;
+    }
+
+    // Enable the privilege or disable all privileges.
+    if(!AdjustTokenPrivileges(
+                hToken,
+                FALSE,
+                &tp,
+                sizeof(TOKEN_PRIVILEGES),
+                (PTOKEN_PRIVILEGES) NULL,
+                (PDWORD) NULL))
+    {
+        printf("AdjustTokenPrivileges error: %lu\n", GetLastError());
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 QString MainWindow::sidToUsername(PSID pSid)
@@ -28,18 +79,18 @@ QString MainWindow::sidToUsername(PSID pSid)
 
     // First call to LookupAccountSid to get the buffer sizes.
     bRtnBool = LookupAccountSid(
-        NULL,           // local computer
-        pSid,
-        AcctName,
-        (LPDWORD)&dwAcctName,
-        DomainName,
-        (LPDWORD)&dwDomainName,
-        &eUse);
+                NULL,           // local computer
+                pSid,
+                AcctName,
+                (LPDWORD)&dwAcctName,
+                DomainName,
+                (LPDWORD)&dwDomainName,
+                &eUse);
 
     // Reallocate memory for the buffers.
     AcctName = (LPTSTR)GlobalAlloc(
-        GMEM_FIXED,
-        dwAcctName * sizeof(WCHAR));
+                GMEM_FIXED,
+                dwAcctName * sizeof(WCHAR));
     if (AcctName == NULL)
     {
         printf("GlobalAlloc error = %lu\n", GetLastError());
@@ -47,8 +98,8 @@ QString MainWindow::sidToUsername(PSID pSid)
     }
 
     DomainName = (LPTSTR)GlobalAlloc(
-        GMEM_FIXED,
-        dwDomainName * sizeof(WCHAR));
+                GMEM_FIXED,
+                dwDomainName * sizeof(WCHAR));
     if (DomainName == NULL)
     {
         printf("GlobalAlloc error = %lu\n", GetLastError());
@@ -58,13 +109,13 @@ QString MainWindow::sidToUsername(PSID pSid)
 
     // Second call to LookupAccountSid to get the account name.
     bRtnBool = LookupAccountSid(
-        NULL,                   // name of local or remote computer
-        pSid,                   // security identifier
-        AcctName,               // account name buffer
-        (LPDWORD)&dwAcctName,   // size of account name buffer
-        DomainName,             // domain name
-        (LPDWORD)&dwDomainName, // size of domain name buffer
-        &eUse);                 // SID type
+                NULL,                   // name of local or remote computer
+                pSid,                   // security identifier
+                AcctName,               // account name buffer
+                (LPDWORD)&dwAcctName,   // size of account name buffer
+                DomainName,             // domain name
+                (LPDWORD)&dwDomainName, // size of domain name buffer
+                &eUse);                 // SID type
 
     // Check GetLastError for LookupAccountSid error condition.
     if (bRtnBool)
@@ -95,13 +146,13 @@ PSID MainWindow::usernameToSid(QString username)
     DWORD err = ERROR_SUCCESS;
 
     ret = LookupAccountName(
-        NULL,
-        username.toStdWString().data(),
-        pSid,
-        &dwSidSize,
-        NULL,
-        &dwDomainSize,
-        &use);
+                NULL,
+                username.toStdWString().data(),
+                pSid,
+                &dwSidSize,
+                NULL,
+                &dwDomainSize,
+                &use);
     if(!ret)
     {
         err = GetLastError();
@@ -125,13 +176,13 @@ PSID MainWindow::usernameToSid(QString username)
     }
 
     ret = LookupAccountName(
-        NULL,
-        username.toStdWString().data(),
-        pSid,
-        &dwSidSize,
-        pDomain,
-        &dwDomainSize,
-        &use);
+                NULL,
+                username.toStdWString().data(),
+                pSid,
+                &dwSidSize,
+                pDomain,
+                &dwDomainSize,
+                &use);
     if(!ret)
     {
         LocalFree(pSid);
@@ -152,13 +203,13 @@ QString MainWindow::getOwner()
 
     // Get the handle of the file object.
     hFile = CreateFile(
-        fileName.toStdWString().data(),
-        GENERIC_READ,
-        FILE_SHARE_READ,
-        NULL,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
-        NULL);
+                fileName.toStdWString().data(),
+                GENERIC_READ,
+                FILE_SHARE_READ,
+                NULL,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                NULL);
 
     // Check GetLastError for CreateFile error code.
     if (hFile == INVALID_HANDLE_VALUE)
@@ -169,14 +220,14 @@ QString MainWindow::getOwner()
 
     // Get the owner SID of the file.
     dwRtnCode = GetSecurityInfo(
-        hFile,
-        SE_FILE_OBJECT,
-        OWNER_SECURITY_INFORMATION,
-        &pSidOwner,
-        NULL,
-        NULL,
-        NULL,
-        &pSD);
+                hFile,
+                SE_FILE_OBJECT,
+                OWNER_SECURITY_INFORMATION,
+                &pSidOwner,
+                NULL,
+                NULL,
+                NULL,
+                &pSD);
 
     // Check GetLastError for GetSecurityInfo error condition.
     if (dwRtnCode != ERROR_SUCCESS)
@@ -188,44 +239,50 @@ QString MainWindow::getOwner()
     return sidToUsername(pSidOwner);
 }
 
-
 int MainWindow::showACL()
 {
-    PACL oldDACL = NULL;
-    PSECURITY_DESCRIPTOR pSD = NULL;
     DWORD err;
-    PEXPLICIT_ACCESS entryList;
-    ULONG entryCount;
-    QString items[6] = { "" };
+    int genCntrAll, genCntrR, genCntrW, genCntrE;
+
+    ui->tableWidget_ACL->clearContents();
+    ui->tableWidget_ACL->setRowCount(0);
+    entryCount = 0;
 
     err = GetNamedSecurityInfo(
-        fileName.toStdWString().data(),
-        SE_FILE_OBJECT,
-        DACL_SECURITY_INFORMATION,
-        NULL,
-        NULL,
-        &oldDACL,
-        NULL,
-        &pSD
-    );
+                fileName.toStdWString().data(),
+                SE_FILE_OBJECT,
+                DACL_SECURITY_INFORMATION,
+                NULL,
+                NULL,
+                &oldDACL,
+                NULL,
+                &pSD);
     if (ERROR_SUCCESS != err)
     {
         return 1;
     }
 
     err = GetExplicitEntriesFromAcl(
-        oldDACL,
-        &entryCount,
-        &entryList
-    );
+                oldDACL,
+                &entryCount,
+                &entryList);
     if (ERROR_SUCCESS != err)
     {
-        LocalFree(oldDACL);
+        //LocalFree(oldDACL);
+        LocalFree(pSD); /// test
+        pSD = NULL;     /// test
+        oldDACL = NULL;
         return 1;
     }
 
     for (unsigned int i = 0; i < entryCount; i++)
     {
+        QString items[6] = { "" };
+        genCntrAll = 0;
+        genCntrR = 0;
+        genCntrW = 0;
+        genCntrE = 0;
+
         if (entryList[i].Trustee.TrusteeForm == TRUSTEE_IS_SID)
         {
             items[0] += sidToUsername(entryList[i].Trustee.ptstrName);
@@ -244,6 +301,8 @@ int MainWindow::showACL()
         // Specific
         if ((entryList[i].grfAccessPermissions & 0x01) == 0x01) // FILE_READ_DATA || FILE_LIST_DIRECTORY
         {
+            genCntrAll++;
+            genCntrR++;
             if(isFile)
             {
                 items[2] += QString::fromWCharArray(L"FILE_READ_DATA\n");
@@ -255,6 +314,8 @@ int MainWindow::showACL()
         }
         if ((entryList[i].grfAccessPermissions & 0x02) == 0x02) // FILE_WRITE_DATA || FILE_ADD_FILE
         {
+            genCntrAll++;
+            genCntrW++;
             if(isFile)
             {
                 items[2] += QString::fromWCharArray(L"FILE_WRITE_DATA\n");
@@ -266,6 +327,8 @@ int MainWindow::showACL()
         }
         if ((entryList[i].grfAccessPermissions & 0x04) == 0x04) // FILE_APPEND_DATA || FILE_ADD_SUBDIRECTORY
         {
+            genCntrAll++;
+            genCntrW++;
             if(isFile)
             {
                 items[2] += QString::fromWCharArray(L"FILE_APPEND_DATA\n");
@@ -277,14 +340,20 @@ int MainWindow::showACL()
         }
         if ((entryList[i].grfAccessPermissions & FILE_READ_EA) == FILE_READ_EA)
         {
+            genCntrAll++;
+            genCntrR++;
             items[2] += QString::fromWCharArray(L"FILE_READ_EA\n");
         }
         if ((entryList[i].grfAccessPermissions & FILE_WRITE_EA) == FILE_WRITE_EA)
         {
+            genCntrAll++;
+            genCntrW++;
             items[2] += QString::fromWCharArray(L"FILE_WRITE_EA\n");
         }
         if ((entryList[i].grfAccessPermissions & 0x20) == 0x20) // FILE_EXECUTE || FILE_TRAVERSE
         {
+            genCntrAll++;
+            genCntrE++;
             if(isFile)
             {
                 items[2] += QString::fromWCharArray(L"FILE_EXECUTE\n");
@@ -296,14 +365,20 @@ int MainWindow::showACL()
         }
         if ((entryList[i].grfAccessPermissions & FILE_DELETE_CHILD) == FILE_DELETE_CHILD)
         {
+            genCntrAll++;
             items[2] += QString::fromWCharArray(L"FILE_DELETE_CHILD\n");
         }
         if ((entryList[i].grfAccessPermissions & FILE_READ_ATTRIBUTES) == FILE_READ_ATTRIBUTES)
         {
+            genCntrAll++;
+            genCntrE++;
+            genCntrR++;
             items[2] += QString::fromWCharArray(L"FILE_READ_ATTRIBUTES\n");
         }
         if ((entryList[i].grfAccessPermissions & FILE_WRITE_ATTRIBUTES) == FILE_WRITE_ATTRIBUTES)
         {
+            genCntrAll++;
+            genCntrW++;
             items[2] += QString::fromWCharArray(L"FILE_WRITE_ATTRIBUTES\n");
         }
         items[2] = items[2].left(items[2].lastIndexOf(QChar('\n')));
@@ -311,22 +386,33 @@ int MainWindow::showACL()
         // Standard
         if ((entryList[i].grfAccessPermissions & DELETE) == DELETE)
         {
+            genCntrAll++;
             items[3] += QString::fromWCharArray(L"DELETE\n");
         }
         if ((entryList[i].grfAccessPermissions & READ_CONTROL) == READ_CONTROL)
         {
+            genCntrAll++;
+            genCntrR++;
+            genCntrW++;
+            genCntrE++;
             items[3] += QString::fromWCharArray(L"READ_CONTROL\n");
         }
         if ((entryList[i].grfAccessPermissions & WRITE_DAC) == WRITE_DAC)
         {
+            genCntrAll++;
             items[3] += QString::fromWCharArray(L"WRITE_DAC\n");
         }
         if ((entryList[i].grfAccessPermissions & WRITE_OWNER) == WRITE_OWNER)
         {
+            genCntrAll++;
             items[3] += QString::fromWCharArray(L"WRITE_OWNER\n");
         }
         if ((entryList[i].grfAccessPermissions & SYNCHRONIZE) == SYNCHRONIZE)
         {
+            genCntrAll++;
+            genCntrR++;
+            genCntrW++;
+            genCntrE++;
             items[3] += QString::fromWCharArray(L"SYNCHRONIZE\n");
         }
         items[3] = items[3].left(items[3].lastIndexOf(QChar('\n')));
@@ -343,23 +429,26 @@ int MainWindow::showACL()
         items[5] = items[5].left(items[5].lastIndexOf(QChar('\n')));
 
         // Generic
-        if ((entryList[i].grfAccessPermissions & GENERIC_ALL) == GENERIC_ALL)
+        // Generic
+        if(genCntrAll == 14)
         {
-            items[4] += QString::fromWCharArray(L"GENERIC_ALL\n");
+            items[4] += QString::fromWCharArray(L"(GENERIC_ALL)");
         }
-        if ((entryList[i].grfAccessPermissions & GENERIC_EXECUTE) == GENERIC_EXECUTE)
+        else
         {
-            items[4] += QString::fromWCharArray(L"GENERIC_EXECUTE\n");
+            if(genCntrR == 5)
+            {
+                items[4] += QString::fromWCharArray(L"(GENERIC_READ)");
+            }
+            else if(genCntrW == 6)
+            {
+                items[4] += QString::fromWCharArray(L"(GENERIC_WRITE)");
+            }
+            else if(genCntrE == 4)
+            {
+                items[4] += QString::fromWCharArray(L"(GENERIC_EXECUTE)");
+            }
         }
-        if ((entryList[i].grfAccessPermissions & GENERIC_WRITE) == GENERIC_WRITE)
-        {
-            items[4] += QString::fromWCharArray(L"GENERIC_WRITE\n");
-        }
-        if ((entryList[i].grfAccessPermissions & GENERIC_READ) == GENERIC_READ)
-        {
-            items[4] += QString::fromWCharArray(L"GENERIC_READ\n");
-        }
-        items[4] = items[4].left(items[4].lastIndexOf(QChar('\n')));
 
         //AccessMode
         (entryList[i].grfAccessMode == GRANT_ACCESS) ?  items[1] += QString::fromWCharArray(L"GRANT_ACCESS") :
@@ -380,20 +469,70 @@ int MainWindow::showACL()
         }
     }
 
-    if(entryList)
-    {
-        LocalFree(entryList);
-    }
-    LocalFree(pSD);
+
+    ui->tableWidget_ACL->resizeColumnsToContents();
+    ui->tableWidget_ACL->resizeRowsToContents();
+
     return 0;
+}
+
+bool MainWindow::setACL(PACL newDACL)
+{
+    DWORD err;
+
+    // Attach new ACL to the file
+
+    // PROTECTED_DACL_SECURITY_INFORMATION causes the function to NOT
+    // inherit its parent's ACL. I believe this is what we want.
+    err = SetNamedSecurityInfo(
+                (LPWSTR)fileName.toStdWString().data(),
+                SE_FILE_OBJECT,
+                DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
+                NULL,
+                NULL,
+                newDACL,
+                NULL);
+
+    if (err == ERROR_ACCESS_DENIED)
+    {
+        // set the SE_SECURITY_NAME privilege and try again.
+        HANDLE hToken = NULL;
+
+        if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken))
+        {
+            // Enable the SE_SECURITY_NAME privilege.
+            if (SetPrivilege(hToken, SE_SECURITY_NAME, TRUE))
+            {
+                err = SetNamedSecurityInfo(
+                            (LPWSTR)fileName.toStdWString().data(),
+                            SE_FILE_OBJECT,
+                            DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
+                            NULL,
+                            NULL,
+                            newDACL,
+                            NULL);
+            }
+            CloseHandle(hToken);
+        }
+    }
+
+    if (err != ERROR_SUCCESS)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 bool MainWindow::saveACE()
 {
-    ACCESS_MASK accessMask = 0;
-    ACCESS_MODE accessMode = NOT_USED_ACCESS;
-    PSID pSid = NULL;
+    ACCESS_MASK     accessMask = 0;
+    ACCESS_MODE     accessMode = NOT_USED_ACCESS;
+    PSID            pSid       = NULL;
     EXPLICIT_ACCESS ea;
+    PACL            newDACL    = NULL;
+    bool            retval     = false;
+    DWORD           err        = 0;
 
     //
     // ACCESS_MASK
@@ -538,40 +677,124 @@ bool MainWindow::saveACE()
     ZeroMemory(&ea, sizeof(EXPLICIT_ACCESS));
     ea.grfAccessPermissions             = accessMask;
     ea.grfAccessMode                    = accessMode;
-    ea.grfInheritance                   = NO_INHERITANCE; // mb check this
+    ea.grfInheritance                   = NO_INHERITANCE; // TODO: check this
     ea.Trustee.pMultipleTrustee         = NULL;
     ea.Trustee.MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE;
     ea.Trustee.TrusteeForm              = TRUSTEE_IS_SID;
     ea.Trustee.TrusteeType              = TRUSTEE_IS_USER;
     ea.Trustee.ptstrName                = (LPWCH)pSid;
 
+    //
+    // Check if ACE exists
+    //
+
+    for (unsigned int i = 0; i < entryCount; i++)
+    {
+        if((entryList[i].grfAccessPermissions == ea.grfAccessPermissions) &&
+           (entryList[i].grfAccessMode        == ea.grfAccessMode))
+        {
+            if(entryList[i].Trustee.TrusteeForm == TRUSTEE_IS_SID)
+            {
+                if(memcmp(entryList[i].Trustee.ptstrName, ea.Trustee.ptstrName, sizeof(SID)) == 0)
+                {
+                    LocalFree(pSid);
+                    return false;
+                }
+            }
+            else if(entryList[i].Trustee.TrusteeForm == TRUSTEE_IS_NAME)
+            {
+
+                if(sidToUsername(pSid) == QString::fromStdWString(entryList[i].Trustee.ptstrName))
+                {
+                    LocalFree(pSid);
+                    return false;
+                }
+            }
+            else
+            {
+                LocalFree(pSid);
+                printf("TODO");
+                return false;
+            }
+        }
+    }
+
+    //LocalFree(pSid);
+
 
     //
     // Assign ACE
     //
 
+    // if we are editing ACE delete this ACE first
+    if (!(ui->tableWidget_ACL->item(selectedRow, 0)->text() == QString("UNSAVED")))
+    {
+        if(!DeleteAce(oldDACL, selectedRow))
+        {
+            cleanupGlobals();
+            LocalFree(pSid);
+            return false;
+        }
+    }
 
-    // TODO assign ACE (and check mb it already exists)
+    // create the new ACL with the new ACEs
+    err = SetEntriesInAcl(
+                1,
+                &ea,
+                oldDACL,
+                &newDACL);
 
+    if(ERROR_SUCCESS != err)
+    {
+        cleanupGlobals();
+        LocalFree(pSid);
+        return false;
+    }
 
+    retval = setACL(newDACL);
 
+    // clean up our memory.
+    LocalFree(newDACL);
+    cleanupGlobals();
+    if(!retval)
+    {
+        LocalFree(pSid);
+    }
 
+    return retval;
+}
 
+bool MainWindow::deleteSelectedAce(int index)
+{
+    if(!DeleteAce(oldDACL, index))
+    {
+        return false;
+    }
 
+    setACL(oldDACL);
 
-
-
-
-    //
-    // Cleanup
-    //
-
-    LocalFree(pSid);
     return true;
+}
+
+void MainWindow::cleanupGlobals()
+{
+    if(pSD)
+    {
+        LocalFree(pSD);
+        pSD = NULL;
+        oldDACL = NULL;
+    }
+    if(entryList != NULL)
+    {
+        LocalFree(entryList);
+        entryList = NULL;
+    }
+    entryCount = 0;
 }
 
 void MainWindow::on_pushButton_OpenDirectory_clicked()
 {
+    cleanupGlobals();
     QFileDialog dialog(this);
     dialog.setFileMode(QFileDialog::DirectoryOnly);
     fileName = dialog.getExistingDirectory(this, "Open directory");
@@ -584,12 +807,11 @@ void MainWindow::on_pushButton_OpenDirectory_clicked()
     ui->lineEdit_FileName->setText(fileName);
     ui->lineEdit_Owner->setText(getOwner());
     showACL();
-    ui->tableWidget_ACL->resizeColumnsToContents();
-    ui->tableWidget_ACL->resizeRowsToContents();
 }
 
 void MainWindow::on_pushButton_OpenFile_clicked()
 {
+    cleanupGlobals();
     fileName = QFileDialog::getOpenFileName(this, "Open file");
     if(!fileName.length())
     {
@@ -600,8 +822,6 @@ void MainWindow::on_pushButton_OpenFile_clicked()
     ui->lineEdit_FileName->setText(fileName);
     ui->lineEdit_Owner->setText(getOwner());
     showACL();
-    ui->tableWidget_ACL->resizeColumnsToContents();
-    ui->tableWidget_ACL->resizeRowsToContents();
 }
 
 void MainWindow::on_pushButton_New_clicked()
@@ -638,13 +858,27 @@ void MainWindow::on_pushButton_Save_clicked()
         ui->widget_Container->setEnabled(false);
         ui->pushButton_Save->setEnabled(false);
         ui->pushButton_Cancel->setEnabled(false);
+        ui->tableWidget_ACL->setEnabled(true);
+
+        ui->pushButton_New->setEnabled(true);
+        ui->widget_Container->setEnabled(false);
+        ui->pushButton_Save->setEnabled(false);
+        ui->pushButton_Cancel->setEnabled(false);
+        ui->tableWidget_ACL->setEnabled(true);
+
+        revertEditorFormat();
+
+        showACL();
     }
 }
 
 void MainWindow::on_tableWidget_ACL_itemDoubleClicked(QTableWidgetItem *item)
 {
-    if(item->row() != ui->tableWidget_ACL->rowCount() - 1 &&
-            ui->tableWidget_ACL->item(ui->tableWidget_ACL->rowCount() - 1, 0)->text() == QString("UNSAVED"))
+    ui->pushButton_Delete->setEnabled(false);
+    ui->tableWidget_ACL->setEnabled(false);
+
+    if (item->row() != ui->tableWidget_ACL->rowCount() - 1 &&
+        ui->tableWidget_ACL->item(ui->tableWidget_ACL->rowCount() - 1, 0)->text() == QString("UNSAVED"))
     {
         return;
     }
@@ -653,6 +887,7 @@ void MainWindow::on_tableWidget_ACL_itemDoubleClicked(QTableWidgetItem *item)
     ui->pushButton_Save->setEnabled(true);
     ui->pushButton_Cancel->setEnabled(true);
     ui->pushButton_New->setEnabled(false);
+
 
     ui->checkBox_FILE_LIST_DIRECTORY->   setEnabled(!isFile);
     ui->checkBox_FILE_ADD_FILE->         setEnabled(!isFile);
@@ -664,6 +899,260 @@ void MainWindow::on_tableWidget_ACL_itemDoubleClicked(QTableWidgetItem *item)
     ui->checkBox_FILE_APPEND_DATA->      setEnabled(isFile);
     ui->checkBox_FILE_EXECUTE->          setEnabled(isFile);
 
+    if(ui->tableWidget_ACL->item(ui->tableWidget_ACL->rowCount() - 1, 0)->text() == QString("UNSAVED"))
+    {
+        return;
+    }
+
+    int genCntrAll = 0, genCntrR = 0, genCntrW = 0, genCntrE = 0;
+    int i = item->row();
+    LPTSTR sidStr = NULL;
+    PSID pSID = NULL;
+    QFont boldFont;
+    boldFont.setBold(true);
+
+    revertEditorFormat();
+
+    // Specific
+    if ((entryList[i].grfAccessPermissions & 0x01) == 0x01) // FILE_READ_DATA || FILE_LIST_DIRECTORY
+    {
+        if(isFile)
+        {
+            genCntrAll++;
+            genCntrR++;
+            ui->checkBox_FILE_READ_DATA        ->setChecked(true);
+        }
+        else
+        {
+            genCntrAll++;
+            genCntrR++;
+            ui->checkBox_FILE_LIST_DIRECTORY   ->setChecked(true);
+        }
+    }
+    if ((entryList[i].grfAccessPermissions & 0x02) == 0x02) // FILE_WRITE_DATA || FILE_ADD_FILE
+    {
+        if(isFile)
+        {
+            genCntrAll++;
+            genCntrW++;
+            ui->checkBox_FILE_WRITE_DATA       ->setChecked(true);
+        }
+        else
+        {
+            genCntrAll++;
+            genCntrW++;
+            ui->checkBox_FILE_ADD_FILE         ->setChecked(true);
+        }
+    }
+    if ((entryList[i].grfAccessPermissions & 0x04) == 0x04) // FILE_APPEND_DATA || FILE_ADD_SUBDIRECTORY
+    {
+        if(isFile)
+        {
+            genCntrAll++;
+            genCntrW++;
+            ui->checkBox_FILE_APPEND_DATA      ->setChecked(true);
+        }
+        else
+        {
+            genCntrAll++;
+            genCntrW++;
+            ui->checkBox_FILE_ADD_SUBDIRECTORY ->setChecked(true);
+        }
+    }
+    if ((entryList[i].grfAccessPermissions & FILE_READ_EA) == FILE_READ_EA)
+    {
+        genCntrAll++;
+        genCntrR++;
+        ui->checkBox_FILE_READ_EA          ->setChecked(true);
+    }
+    if ((entryList[i].grfAccessPermissions & FILE_WRITE_EA) == FILE_WRITE_EA)
+    {
+        genCntrAll++;
+        genCntrW++;
+        ui->checkBox_FILE_WRITE_EA         ->setChecked(true);
+    }
+    if ((entryList[i].grfAccessPermissions & 0x20) == 0x20) // FILE_EXECUTE || FILE_TRAVERSE
+    {
+        if(isFile)
+        {
+            genCntrAll++;
+            genCntrE++;
+            ui->checkBox_FILE_EXECUTE          ->setChecked(true);
+        }
+        else
+        {
+            genCntrAll++;
+            genCntrE++;
+            ui->checkBox_FILE_TRAVERSE         ->setChecked(true);
+        }
+    }
+    if ((entryList[i].grfAccessPermissions & FILE_DELETE_CHILD) == FILE_DELETE_CHILD)
+    {
+        genCntrAll++;
+        ui->checkBox_FILE_DELETE_CHILD     ->setChecked(true);
+    }
+    if ((entryList[i].grfAccessPermissions & FILE_READ_ATTRIBUTES) == FILE_READ_ATTRIBUTES)
+    {
+        genCntrAll++;
+        genCntrE++;
+        genCntrR++;
+        ui->checkBox_FILE_READ_ATTRIBUTES  ->setChecked(true);
+    }
+    if ((entryList[i].grfAccessPermissions & FILE_WRITE_ATTRIBUTES) == FILE_WRITE_ATTRIBUTES)
+    {
+        genCntrAll++;
+        genCntrW++;
+        ui->checkBox_FILE_WRITE_ATTRIBUTES ->setChecked(true);
+    }
+
+    // Standard
+    if ((entryList[i].grfAccessPermissions & DELETE) == DELETE)
+    {
+        genCntrAll++;
+        ui->checkBox_DELETE                ->setChecked(true);
+    }
+    if ((entryList[i].grfAccessPermissions & READ_CONTROL) == READ_CONTROL)
+    {
+        genCntrAll++;
+        genCntrR++;
+        genCntrW++;
+        genCntrE++;
+        ui->checkBox_READ_CONTROL          ->setChecked(true);
+    }
+    if ((entryList[i].grfAccessPermissions & WRITE_DAC) == WRITE_DAC)
+    {
+        genCntrAll++;
+        ui->checkBox_WRITE_DAC             ->setChecked(true);
+    }
+    if ((entryList[i].grfAccessPermissions & WRITE_OWNER) == WRITE_OWNER)
+    {
+        genCntrAll++;
+        ui->checkBox_WRITE_OWNER           ->setChecked(true);
+    }
+    if ((entryList[i].grfAccessPermissions & SYNCHRONIZE) == SYNCHRONIZE)
+    {
+        genCntrAll++;
+        genCntrR++;
+        genCntrW++;
+        genCntrE++;
+        ui->checkBox_SYNCHRONIZE           ->setChecked(true);
+    }
+
+    // Other
+    if ((entryList[i].grfAccessPermissions & ACCESS_SYSTEM_SECURITY) == ACCESS_SYSTEM_SECURITY)
+    {
+        ui->checkBox_ACCESS_SYSTEM_SECURITY->setChecked(true);
+    }
+    if ((entryList[i].grfAccessPermissions & MAXIMUM_ALLOWED) == MAXIMUM_ALLOWED)
+    {
+        ui->checkBox_MAXIMUM_ALLOWED       ->setChecked(true);
+    }
+
+    // Generic
+    if(genCntrAll == 14)
+    {
+        ui->checkBox_GENERIC_ALL->setChecked(true);
+
+        ui->checkBox_GENERIC_ALL->setFont(boldFont);
+
+        ui->checkBox_FILE_ADD_FILE         ->setFont(boldFont);
+        ui->checkBox_FILE_ADD_SUBDIRECTORY ->setFont(boldFont);
+        ui->checkBox_FILE_APPEND_DATA      ->setFont(boldFont);
+        ui->checkBox_FILE_DELETE_CHILD     ->setFont(boldFont);
+        ui->checkBox_FILE_EXECUTE          ->setFont(boldFont);
+        ui->checkBox_FILE_LIST_DIRECTORY   ->setFont(boldFont);
+        ui->checkBox_FILE_READ_ATTRIBUTES  ->setFont(boldFont);
+        ui->checkBox_FILE_READ_DATA        ->setFont(boldFont);
+        ui->checkBox_FILE_READ_EA          ->setFont(boldFont);
+        ui->checkBox_FILE_TRAVERSE         ->setFont(boldFont);
+        ui->checkBox_FILE_WRITE_ATTRIBUTES ->setFont(boldFont);
+        ui->checkBox_FILE_WRITE_DATA       ->setFont(boldFont);
+        ui->checkBox_FILE_WRITE_EA         ->setFont(boldFont);
+
+        ui->checkBox_DELETE                ->setFont(boldFont);
+        ui->checkBox_READ_CONTROL          ->setFont(boldFont);
+        ui->checkBox_SYNCHRONIZE           ->setFont(boldFont);
+        ui->checkBox_WRITE_DAC             ->setFont(boldFont);
+        ui->checkBox_WRITE_OWNER           ->setFont(boldFont);
+    }
+    else
+    {
+        if(genCntrR == 5)
+        {
+            ui->checkBox_GENERIC_READ->setChecked(true);
+
+            ui->checkBox_GENERIC_READ->setFont(boldFont);
+
+            ui->checkBox_FILE_READ_DATA        ->setFont(boldFont);
+            ui->checkBox_FILE_LIST_DIRECTORY   ->setFont(boldFont);
+            ui->checkBox_FILE_READ_EA          ->setFont(boldFont);
+            ui->checkBox_FILE_READ_ATTRIBUTES  ->setFont(boldFont);
+
+            ui->checkBox_READ_CONTROL          ->setFont(boldFont);
+            ui->checkBox_SYNCHRONIZE           ->setFont(boldFont);
+        }
+        else if(genCntrW == 6)
+        {
+            ui->checkBox_GENERIC_WRITE->setChecked(true);
+
+            ui->checkBox_GENERIC_WRITE->setFont(boldFont);
+
+            ui->checkBox_FILE_WRITE_DATA       ->setFont(boldFont);
+            ui->checkBox_FILE_ADD_FILE         ->setFont(boldFont);
+            ui->checkBox_FILE_APPEND_DATA      ->setFont(boldFont);
+            ui->checkBox_FILE_ADD_SUBDIRECTORY ->setFont(boldFont);
+            ui->checkBox_FILE_WRITE_EA         ->setFont(boldFont);
+            ui->checkBox_FILE_WRITE_ATTRIBUTES ->setFont(boldFont);
+
+            ui->checkBox_READ_CONTROL          ->setFont(boldFont);
+            ui->checkBox_SYNCHRONIZE           ->setFont(boldFont);
+        }
+        else if(genCntrE == 4)
+        {
+            ui->checkBox_GENERIC_EXECUTE->setChecked(true);
+
+            ui->checkBox_GENERIC_EXECUTE->setFont(boldFont);
+
+            ui->checkBox_FILE_EXECUTE          ->setFont(boldFont);
+            ui->checkBox_FILE_TRAVERSE         ->setFont(boldFont);
+            ui->checkBox_FILE_READ_ATTRIBUTES  ->setFont(boldFont);
+
+            ui->checkBox_READ_CONTROL          ->setFont(boldFont);
+            ui->checkBox_SYNCHRONIZE           ->setFont(boldFont);
+        }
+    }
+
+
+    // AccessMode
+    (entryList[i].grfAccessMode == GRANT_ACCESS) ?  ui->comboBox_AccessMode->setCurrentIndex(1) :
+    (entryList[i].grfAccessMode == SET_ACCESS) ?    ui->comboBox_AccessMode->setCurrentIndex(2) :
+    (entryList[i].grfAccessMode == DENY_ACCESS) ?   ui->comboBox_AccessMode->setCurrentIndex(3) :
+    (entryList[i].grfAccessMode == REVOKE_ACCESS) ? ui->comboBox_AccessMode->setCurrentIndex(4) :
+                                                    ui->comboBox_AccessMode->setCurrentIndex(0) ;
+
+    // Trustee
+    if (entryList[i].Trustee.TrusteeForm == TRUSTEE_IS_SID)
+    {
+        ui->lineEdit_Username->setText(sidToUsername(entryList[i].Trustee.ptstrName));
+
+        ConvertSidToStringSid(entryList[i].Trustee.ptstrName, &sidStr);
+        ui->lineEdit_SID->setText(QString::fromWCharArray(sidStr));
+        LocalFree(sidStr);
+    }
+    else if (entryList[i].Trustee.TrusteeForm == TRUSTEE_IS_NAME)
+    {
+        ui->lineEdit_Username->setText(QString::fromWCharArray(entryList[i].Trustee.ptstrName));
+
+        pSID = usernameToSid(QString::fromWCharArray(entryList[i].Trustee.ptstrName));
+        ConvertSidToStringSid(entryList[i].Trustee.ptstrName, &sidStr);
+        ui->lineEdit_SID->setText(QString::fromWCharArray(sidStr));
+        LocalFree(sidStr);
+        LocalFree(pSID);
+    }
+    else // TRUSTEE_IS_OBJECTS_AND_NAME || TRUSTEE_IS_OBJECTS_AND_SID
+    {
+        printf("TODO TRUSTEE_IS_OBJECTS_AND_NAME || TRUSTEE_IS_OBJECTS_AND_SID");
+    }
 }
 
 void MainWindow::on_pushButton_Cancel_clicked()
@@ -672,6 +1161,9 @@ void MainWindow::on_pushButton_Cancel_clicked()
     ui->widget_Container->setEnabled(false);
     ui->pushButton_Save->setEnabled(false);
     ui->pushButton_Cancel->setEnabled(false);
+    ui->tableWidget_ACL->setEnabled(true);
+
+    revertEditorFormat();
 
     if(ui->tableWidget_ACL->item(ui->tableWidget_ACL->rowCount() - 1, 0)->text() == QString("UNSAVED"))
     {
@@ -691,3 +1183,105 @@ void MainWindow::on_pushButton_CheckName_clicked()
     LocalFree(sidStr);
     LocalFree(pSid);
 }
+
+void MainWindow::on_pushButton_Delete_clicked()
+{
+    ui->pushButton_Delete->setEnabled(false);
+
+    if(ui->tableWidget_ACL->item(selectedRow, 0)->text() == QString("UNSAVED"))
+    {
+        ui->pushButton_New->setEnabled(true);
+        ui->tableWidget_ACL->removeRow(selectedRow);
+        return;
+    }
+
+    deleteSelectedAce(selectedRow);
+    cleanupGlobals();
+    showACL();
+}
+
+void MainWindow::on_tableWidget_ACL_itemClicked(QTableWidgetItem *item)
+{
+    selectedRow = item->row();
+
+    if (ui->tableWidget_ACL->item(ui->tableWidget_ACL->rowCount() - 1, 0)->text() == QString("UNSAVED"))
+    {
+        if (selectedRow == ui->tableWidget_ACL->rowCount() - 1)
+        {
+            ui->pushButton_Delete->setEnabled(true);
+        }
+        else
+        {
+            ui->pushButton_Delete->setEnabled(false);
+        }
+    }
+    else
+    {
+        ui->pushButton_Delete->setEnabled(true);
+    }
+}
+
+void MainWindow::revertEditorFormat()
+{
+    QFont boldFont;
+    boldFont.setBold(false);
+
+    ui->checkBox_GENERIC_ALL->setFont(boldFont);
+    ui->checkBox_GENERIC_EXECUTE->setFont(boldFont);
+    ui->checkBox_GENERIC_READ->setFont(boldFont);
+    ui->checkBox_GENERIC_WRITE->setFont(boldFont);
+
+    ui->checkBox_FILE_ADD_FILE         ->setFont(boldFont);
+    ui->checkBox_FILE_ADD_SUBDIRECTORY ->setFont(boldFont);
+    ui->checkBox_FILE_APPEND_DATA      ->setFont(boldFont);
+    ui->checkBox_FILE_DELETE_CHILD     ->setFont(boldFont);
+    ui->checkBox_FILE_EXECUTE          ->setFont(boldFont);
+    ui->checkBox_FILE_LIST_DIRECTORY   ->setFont(boldFont);
+    ui->checkBox_FILE_READ_ATTRIBUTES  ->setFont(boldFont);
+    ui->checkBox_FILE_READ_DATA        ->setFont(boldFont);
+    ui->checkBox_FILE_READ_EA          ->setFont(boldFont);
+    ui->checkBox_FILE_TRAVERSE         ->setFont(boldFont);
+    ui->checkBox_FILE_WRITE_ATTRIBUTES ->setFont(boldFont);
+    ui->checkBox_FILE_WRITE_DATA       ->setFont(boldFont);
+    ui->checkBox_FILE_WRITE_EA         ->setFont(boldFont);
+
+    ui->checkBox_DELETE                ->setFont(boldFont);
+    ui->checkBox_READ_CONTROL          ->setFont(boldFont);
+    ui->checkBox_SYNCHRONIZE           ->setFont(boldFont);
+    ui->checkBox_WRITE_DAC             ->setFont(boldFont);
+    ui->checkBox_WRITE_OWNER           ->setFont(boldFont);
+
+    ui->checkBox_FILE_ADD_FILE         ->setChecked(false);
+    ui->checkBox_FILE_ADD_SUBDIRECTORY ->setChecked(false);
+    ui->checkBox_FILE_APPEND_DATA      ->setChecked(false);
+    ui->checkBox_FILE_DELETE_CHILD     ->setChecked(false);
+    ui->checkBox_FILE_EXECUTE          ->setChecked(false);
+    ui->checkBox_FILE_LIST_DIRECTORY   ->setChecked(false);
+    ui->checkBox_FILE_READ_ATTRIBUTES  ->setChecked(false);
+    ui->checkBox_FILE_READ_DATA        ->setChecked(false);
+    ui->checkBox_FILE_READ_EA          ->setChecked(false);
+    ui->checkBox_FILE_TRAVERSE         ->setChecked(false);
+    ui->checkBox_FILE_WRITE_ATTRIBUTES ->setChecked(false);
+    ui->checkBox_FILE_WRITE_DATA       ->setChecked(false);
+    ui->checkBox_FILE_WRITE_EA         ->setChecked(false);
+
+    ui->checkBox_DELETE                ->setChecked(false);
+    ui->checkBox_READ_CONTROL          ->setChecked(false);
+    ui->checkBox_SYNCHRONIZE           ->setChecked(false);
+    ui->checkBox_WRITE_DAC             ->setChecked(false);
+    ui->checkBox_WRITE_OWNER           ->setChecked(false);
+
+    ui->checkBox_ACCESS_SYSTEM_SECURITY->setChecked(false);
+    ui->checkBox_MAXIMUM_ALLOWED       ->setChecked(false);
+
+    ui->checkBox_GENERIC_ALL           ->setChecked(false);
+    ui->checkBox_GENERIC_EXECUTE       ->setChecked(false);
+    ui->checkBox_GENERIC_READ          ->setChecked(false);
+    ui->checkBox_GENERIC_WRITE         ->setChecked(false);
+
+    ui->lineEdit_Username->clear();
+    ui->lineEdit_SID->clear();
+
+    ui->comboBox_AccessMode->setCurrentIndex(0);
+}
+
