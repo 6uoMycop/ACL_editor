@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1536</width>
+    <width>1260</width>
     <height>626</height>
    </rect>
   </property>
@@ -18,13 +18,13 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>1536</width>
+    <width>1260</width>
     <height>626</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>1536</width>
+    <width>1260</width>
     <height>626</height>
    </size>
   </property>
@@ -37,36 +37,52 @@
      <rect>
       <x>9</x>
       <y>9</y>
-      <width>1521</width>
+      <width>1241</width>
       <height>610</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="3" column="7">
-      <widget class="QPushButton" name="pushButton_Save">
-       <property name="text">
-        <string>Save</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLineEdit" name="lineEdit_FileName">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="4" rowspan="4">
-      <widget class="Line" name="line_11">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="3">
       <widget class="QPushButton" name="pushButton_OpenDirectory">
        <property name="text">
         <string>Open directory...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QCheckBox" name="checkBox_Elevated">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Elevated</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="pushButton_OpenFile">
+       <property name="minimumSize">
+        <size>
+         <width>105</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Open file...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="6">
+      <widget class="QPushButton" name="pushButton_Cancel">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_ACL">
+       <property name="text">
+        <string>DACL</string>
        </property>
       </widget>
      </item>
@@ -113,6 +129,60 @@
        </column>
       </widget>
      </item>
+     <item row="3" column="7">
+      <widget class="QPushButton" name="pushButton_Save">
+       <property name="text">
+        <string>Save</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4" rowspan="4">
+      <widget class="Line" name="line_11">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_CurrentUser">
+         <property name="text">
+          <string>Current user:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lineEdit_CurrentUser">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maxLength">
+          <number>256</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
      <item row="3" column="0" colspan="4">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
@@ -138,60 +208,53 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="2">
-      <widget class="QPushButton" name="pushButton_OpenFile">
-       <property name="minimumSize">
-        <size>
-         <width>105</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>Open file...</string>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="lineEdit_FileName">
+       <property name="enabled">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
      <item row="0" column="5" rowspan="3" colspan="3">
       <widget class="QWidget" name="widget_Container" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="16" column="2" colspan="3">
-         <widget class="Line" name="line_8">
+        <item row="22" column="4">
+         <widget class="QPushButton" name="pushButton_CheckName">
+          <property name="text">
+           <string>Check name</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="4">
+         <widget class="QCheckBox" name="checkBox_GENERIC_READ">
+          <property name="toolTip">
+           <string>Read access</string>
+          </property>
+          <property name="text">
+           <string>GENERIC_READ</string>
+          </property>
+         </widget>
+        </item>
+        <item row="24" column="0" colspan="5">
+         <widget class="Line" name="line_10">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
-        <item row="14" column="2" colspan="3">
-         <widget class="Line" name="line_7">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="18" column="3">
-         <widget class="QCheckBox" name="checkBox_GENERIC_EXECUTE">
+        <item row="13" column="3">
+         <widget class="QCheckBox" name="checkBox_WRITE_DAC">
           <property name="toolTip">
-           <string>Execute access</string>
+           <string>Write access to the DACL.</string>
           </property>
           <property name="text">
-           <string>GENERIC_EXECUTE</string>
-          </property>
-         </widget>
-        </item>
-        <item row="20" column="1">
-         <widget class="Line" name="line_3">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="3">
-         <widget class="QCheckBox" name="checkBox_DELETE">
-          <property name="toolTip">
-           <string>Delete access.</string>
-          </property>
-          <property name="text">
-           <string>DELETE</string>
+           <string>WRITE_DAC</string>
           </property>
          </widget>
         </item>
@@ -212,23 +275,50 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="2">
-         <widget class="QLabel" name="label_Specific">
+        <item row="6" column="3">
+         <widget class="QCheckBox" name="checkBox_FILE_ADD_FILE">
           <property name="toolTip">
-           <string>Specific rights. Contains the access mask specific to the object type associated with the mask (HERE - for a file or directory).</string>
+           <string>Grants the right to write data to the file. For a directory, this value grants the right to create a file in the directory.</string>
           </property>
           <property name="text">
-           <string>Specific</string>
+           <string>FILE_ADD_FILE</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="3">
-         <widget class="QCheckBox" name="checkBox_FILE_WRITE_DATA">
+        <item row="9" column="3">
+         <widget class="QCheckBox" name="checkBox_FILE_READ_EA">
           <property name="toolTip">
-           <string>Grants the right to write data to the file.</string>
+           <string>Grants the right to read extended attributes.</string>
           </property>
           <property name="text">
-           <string>FILE_WRITE_DATA</string>
+           <string>FILE_READ_EA</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="2">
+         <widget class="QLabel" name="label_Standard">
+          <property name="toolTip">
+           <string>Standard rights. Contains the object's standard access rights.</string>
+          </property>
+          <property name="text">
+           <string>Standard</string>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="2" colspan="3">
+         <widget class="Line" name="line_8">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="3">
+         <widget class="QCheckBox" name="checkBox_FILE_APPEND_DATA">
+          <property name="toolTip">
+           <string>Grants the right to append data to the file. For a directory, this value grants the right to create a subdirectory.</string>
+          </property>
+          <property name="text">
+           <string>FILE_APPEND_DATA</string>
           </property>
          </widget>
         </item>
@@ -239,23 +329,67 @@
           </property>
          </widget>
         </item>
-        <item row="8" column="3">
-         <widget class="QCheckBox" name="checkBox_FILE_ADD_SUBDIRECTORY">
-          <property name="toolTip">
-           <string>Grants the right to append data to the file. For a directory, this value grants the right to create a subdirectory.</string>
-          </property>
-          <property name="text">
-           <string>FILE_ADD_SUBDIRECTORY</string>
+        <item row="23" column="3" colspan="2">
+         <widget class="QLineEdit" name="lineEdit_SID">
+          <property name="enabled">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
-        <item row="5" column="4">
-         <widget class="QCheckBox" name="checkBox_FILE_TRAVERSE">
+        <item row="4" column="3">
+         <widget class="QCheckBox" name="checkBox_FILE_LIST_DIRECTORY">
           <property name="toolTip">
-           <string>Grants the right to execute a file. For a directory, the directory can be traversed.</string>
+           <string>Grants the right to read data from the file. For a directory, this value grants the right to list the contents of the directory.</string>
           </property>
           <property name="text">
-           <string>FILE_TRAVERSE</string>
+           <string>FILE_LIST_DIRECTORY</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="3">
+         <widget class="QCheckBox" name="checkBox_ACCESS_SYSTEM_SECURITY">
+          <property name="toolTip">
+           <string>Access system security (ACCESS_SYSTEM_SECURITY). It is used to indicate access to a system access control list (SACL). This type of access requires the calling process to have the SE_SECURITY_NAME (Manage auditing and security log) privilege. If this flag is set in the access mask of an audit access ACE (successful or unsuccessful access), the SACL access will be audited.</string>
+          </property>
+          <property name="text">
+           <string>ACCESS_SYSTEM_SECURITY</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <widget class="QLabel" name="label_Specific">
+          <property name="toolTip">
+           <string>Specific rights. Contains the access mask specific to the object type associated with the mask (HERE - for a file or directory).</string>
+          </property>
+          <property name="text">
+           <string>Specific</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0" colspan="5">
+         <widget class="Line" name="line_9">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="4">
+         <widget class="QCheckBox" name="checkBox_FILE_WRITE_ATTRIBUTES">
+          <property name="toolTip">
+           <string>Grants the right to change file attributes.</string>
+          </property>
+          <property name="text">
+           <string>FILE_WRITE_ATTRIBUTES</string>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="4">
+         <widget class="QCheckBox" name="checkBox_GENERIC_WRITE">
+          <property name="toolTip">
+           <string>Write access</string>
+          </property>
+          <property name="text">
+           <string>GENERIC_WRITE</string>
           </property>
          </widget>
         </item>
@@ -294,104 +428,54 @@ REVOKE_ACCESS	- Indicates that all existing ACCESS_ALLOWED_ACE or SYSTEM_AUDIT_A
           </item>
          </widget>
         </item>
-        <item row="11" column="4">
-         <widget class="QCheckBox" name="checkBox_WRITE_OWNER">
+        <item row="18" column="3">
+         <widget class="QCheckBox" name="checkBox_GENERIC_EXECUTE">
           <property name="toolTip">
-           <string>Write access to owner.</string>
+           <string>Execute access</string>
           </property>
           <property name="text">
-           <string>WRITE_OWNER</string>
+           <string>GENERIC_EXECUTE</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="4">
-         <widget class="QCheckBox" name="checkBox_FILE_DELETE_CHILD">
+        <item row="20" column="1">
+         <widget class="Line" name="line_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="3">
+         <widget class="QCheckBox" name="checkBox_FILE_ADD_SUBDIRECTORY">
           <property name="toolTip">
-           <string>Grants the right to delete a directory and all the files it contains (its children), even if the files are read-only.</string>
+           <string>Grants the right to append data to the file. For a directory, this value grants the right to create a subdirectory.</string>
           </property>
           <property name="text">
-           <string>FILE_DELETE_CHILD</string>
+           <string>FILE_ADD_SUBDIRECTORY</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="4">
-         <widget class="QCheckBox" name="checkBox_FILE_WRITE_EA">
+        <item row="5" column="3">
+         <widget class="QCheckBox" name="checkBox_FILE_WRITE_DATA">
           <property name="toolTip">
-           <string>Grants the right to write extended attributes.</string>
+           <string>Grants the right to write data to the file.</string>
           </property>
           <property name="text">
-           <string>FILE_WRITE_EA</string>
+           <string>FILE_WRITE_DATA</string>
           </property>
          </widget>
         </item>
-        <item row="23" column="2">
-         <widget class="QLabel" name="label_SID">
-          <property name="text">
-           <string>SID</string>
+        <item row="1" column="3">
+         <widget class="QLineEdit" name="lineEdit_Owner">
+          <property name="enabled">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
-        <item row="15" column="4">
-         <widget class="QCheckBox" name="checkBox_MAXIMUM_ALLOWED">
-          <property name="text">
-           <string>MAXIMUM_ALLOWED</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="3">
-         <widget class="QCheckBox" name="checkBox_WRITE_DAC">
-          <property name="toolTip">
-           <string>Write access to the DACL.</string>
-          </property>
-          <property name="text">
-           <string>WRITE_DAC</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="4">
-         <widget class="QCheckBox" name="checkBox_FILE_EXECUTE">
-          <property name="toolTip">
-           <string>Grants the right to execute a file.</string>
-          </property>
-          <property name="text">
-           <string>FILE_EXECUTE</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="3">
-         <widget class="QCheckBox" name="checkBox_FILE_LIST_DIRECTORY">
-          <property name="toolTip">
-           <string>Grants the right to read data from the file. For a directory, this value grants the right to list the contents of the directory.</string>
-          </property>
-          <property name="text">
-           <string>FILE_LIST_DIRECTORY</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="3">
-         <widget class="QCheckBox" name="checkBox_FILE_READ_EA">
-          <property name="toolTip">
-           <string>Grants the right to read extended attributes.</string>
-          </property>
-          <property name="text">
-           <string>FILE_READ_EA</string>
-          </property>
-         </widget>
-        </item>
-        <item row="15" column="2">
-         <widget class="QLabel" name="label_Other">
-          <property name="text">
-           <string>Other</string>
-          </property>
-         </widget>
-        </item>
-        <item row="18" column="4">
-         <widget class="QCheckBox" name="checkBox_GENERIC_READ">
-          <property name="toolTip">
-           <string>Read access</string>
-          </property>
-          <property name="text">
-           <string>GENERIC_READ</string>
+        <item row="3" column="1" rowspan="16">
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
           </property>
          </widget>
         </item>
@@ -405,22 +489,117 @@ REVOKE_ACCESS	- Indicates that all existing ACCESS_ALLOWED_ACE or SYSTEM_AUDIT_A
           </property>
          </widget>
         </item>
-        <item row="12" column="4">
-         <widget class="QCheckBox" name="checkBox_SYNCHRONIZE">
-          <property name="toolTip">
-           <string>Synchronize access.</string>
-          </property>
-          <property name="text">
-           <string>SYNCHRONIZE</string>
+        <item row="14" column="2" colspan="3">
+         <widget class="Line" name="line_7">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
-        <item row="22" column="0">
-         <widget class="QLabel" name="label_Trustee">
+        <item row="5" column="4">
+         <widget class="QCheckBox" name="checkBox_FILE_TRAVERSE">
+          <property name="toolTip">
+           <string>Grants the right to execute a file. For a directory, the directory can be traversed.</string>
+          </property>
           <property name="text">
-           <string>Trustee</string>
+           <string>FILE_TRAVERSE</string>
           </property>
          </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="Line" name="line_13">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="4">
+         <widget class="QCheckBox" name="checkBox_WRITE_OWNER">
+          <property name="toolTip">
+           <string>Write access to owner.</string>
+          </property>
+          <property name="text">
+           <string>WRITE_OWNER</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="4">
+         <widget class="QCheckBox" name="checkBox_MAXIMUM_ALLOWED">
+          <property name="text">
+           <string>MAXIMUM_ALLOWED</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="4">
+         <widget class="QCheckBox" name="checkBox_FILE_EXECUTE">
+          <property name="toolTip">
+           <string>Grants the right to execute a file.</string>
+          </property>
+          <property name="text">
+           <string>FILE_EXECUTE</string>
+          </property>
+         </widget>
+        </item>
+        <item row="19" column="0" colspan="5">
+         <widget class="Line" name="line_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="3">
+         <widget class="QCheckBox" name="checkBox_FILE_READ_DATA">
+          <property name="toolTip">
+           <string>Grants the right to read data from the file.</string>
+          </property>
+          <property name="text">
+           <string>FILE_READ_DATA</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="5">
+         <widget class="Line" name="line_12">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Owner:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="22" column="1" rowspan="2">
+         <widget class="Line" name="line_5">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="3">
+         <widget class="QCheckBox" name="checkBox_DELETE">
+          <property name="toolTip">
+           <string>Delete access.</string>
+          </property>
+          <property name="text">
+           <string>DELETE</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="4">
+         <widget class="QCheckBox" name="checkBox_FILE_WRITE_EA">
+          <property name="toolTip">
+           <string>Grants the right to write extended attributes.</string>
+          </property>
+          <property name="text">
+           <string>FILE_WRITE_EA</string>
+          </property>
+         </widget>
+        </item>
+        <item row="22" column="3">
+         <widget class="QLineEdit" name="lineEdit_Username"/>
         </item>
         <item row="20" column="0">
          <widget class="QLabel" name="label_AccessMode">
@@ -435,24 +614,13 @@ REVOKE_ACCESS	- Indicates that all existing ACCESS_ALLOWED_ACE or SYSTEM_AUDIT_A
           </property>
          </widget>
         </item>
-        <item row="3" column="1" rowspan="16">
-         <widget class="Line" name="line">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
+        <item row="6" column="4">
+         <widget class="QCheckBox" name="checkBox_FILE_DELETE_CHILD">
+          <property name="toolTip">
+           <string>Grants the right to delete a directory and all the files it contains (its children), even if the files are read-only.</string>
           </property>
-         </widget>
-        </item>
-        <item row="22" column="1" rowspan="2">
-         <widget class="Line" name="line_5">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>Owner:</string>
+           <string>FILE_DELETE_CHILD</string>
           </property>
          </widget>
         </item>
@@ -466,88 +634,13 @@ REVOKE_ACCESS	- Indicates that all existing ACCESS_ALLOWED_ACE or SYSTEM_AUDIT_A
           </property>
          </widget>
         </item>
-        <item row="11" column="2">
-         <widget class="QLabel" name="label_Standard">
+        <item row="12" column="4">
+         <widget class="QCheckBox" name="checkBox_SYNCHRONIZE">
           <property name="toolTip">
-           <string>Standard rights. Contains the object's standard access rights.</string>
+           <string>Synchronize access.</string>
           </property>
           <property name="text">
-           <string>Standard</string>
-          </property>
-         </widget>
-        </item>
-        <item row="22" column="4">
-         <widget class="QPushButton" name="pushButton_CheckName">
-          <property name="text">
-           <string>Check name</string>
-          </property>
-         </widget>
-        </item>
-        <item row="17" column="4">
-         <widget class="QCheckBox" name="checkBox_GENERIC_WRITE">
-          <property name="toolTip">
-           <string>Write access</string>
-          </property>
-          <property name="text">
-           <string>GENERIC_WRITE</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_AccessPermissions">
-          <property name="text">
-           <string>Access Permissions</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0" colspan="5">
-         <widget class="Line" name="line_9">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="19" column="0" colspan="5">
-         <widget class="Line" name="line_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="24" column="0" colspan="5">
-         <widget class="Line" name="line_10">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="4">
-         <widget class="QCheckBox" name="checkBox_FILE_WRITE_ATTRIBUTES">
-          <property name="toolTip">
-           <string>Grants the right to change file attributes.</string>
-          </property>
-          <property name="text">
-           <string>FILE_WRITE_ATTRIBUTES</string>
-          </property>
-         </widget>
-        </item>
-        <item row="15" column="3">
-         <widget class="QCheckBox" name="checkBox_ACCESS_SYSTEM_SECURITY">
-          <property name="toolTip">
-           <string>Access system security (ACCESS_SYSTEM_SECURITY). It is used to indicate access to a system access control list (SACL). This type of access requires the calling process to have the SE_SECURITY_NAME (Manage auditing and security log) privilege. If this flag is set in the access mask of an audit access ACE (successful or unsuccessful access), the SACL access will be audited.</string>
-          </property>
-          <property name="text">
-           <string>ACCESS_SYSTEM_SECURITY</string>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="3">
-         <widget class="QCheckBox" name="checkBox_FILE_APPEND_DATA">
-          <property name="toolTip">
-           <string>Grants the right to append data to the file. For a directory, this value grants the right to create a subdirectory.</string>
-          </property>
-          <property name="text">
-           <string>FILE_APPEND_DATA</string>
+           <string>SYNCHRONIZE</string>
           </property>
          </widget>
         </item>
@@ -561,33 +654,31 @@ REVOKE_ACCESS	- Indicates that all existing ACCESS_ALLOWED_ACE or SYSTEM_AUDIT_A
           </property>
          </widget>
         </item>
-        <item row="22" column="3">
-         <widget class="QLineEdit" name="lineEdit_Username"/>
-        </item>
-        <item row="23" column="3" colspan="2">
-         <widget class="QLineEdit" name="lineEdit_SID">
-          <property name="enabled">
-           <bool>false</bool>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_AccessPermissions">
+          <property name="text">
+           <string>Access Permissions</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="3">
-         <widget class="QCheckBox" name="checkBox_FILE_READ_DATA">
-          <property name="toolTip">
-           <string>Grants the right to read data from the file.</string>
-          </property>
+        <item row="23" column="2">
+         <widget class="QLabel" name="label_SID">
           <property name="text">
-           <string>FILE_READ_DATA</string>
+           <string>SID</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="3">
-         <widget class="QCheckBox" name="checkBox_FILE_ADD_FILE">
-          <property name="toolTip">
-           <string>Grants the right to write data to the file. For a directory, this value grants the right to create a file in the directory.</string>
-          </property>
+        <item row="22" column="0">
+         <widget class="QLabel" name="label_Trustee">
           <property name="text">
-           <string>FILE_ADD_FILE</string>
+           <string>Trustee</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="2">
+         <widget class="QLabel" name="label_Other">
+          <property name="text">
+           <string>Other</string>
           </property>
          </widget>
         </item>
@@ -598,42 +689,7 @@ REVOKE_ACCESS	- Indicates that all existing ACCESS_ALLOWED_ACE or SYSTEM_AUDIT_A
           </property>
          </widget>
         </item>
-        <item row="2" column="0" colspan="5">
-         <widget class="Line" name="line_12">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="Line" name="line_13">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="3">
-         <widget class="QLineEdit" name="lineEdit_Owner">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
        </layout>
-      </widget>
-     </item>
-     <item row="3" column="6">
-      <widget class="QPushButton" name="pushButton_Cancel">
-       <property name="text">
-        <string>Cancel</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_ACL">
-       <property name="text">
-        <string>DACL</string>
-       </property>
       </widget>
      </item>
     </layout>

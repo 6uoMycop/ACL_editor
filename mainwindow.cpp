@@ -13,8 +13,21 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_New->setEnabled(false);
     ui->pushButton_Delete->setEnabled(false);
 
+
+    WCHAR username[UNLEN + 1];
+    DWORD username_len = UNLEN + 1;
+    GetUserName(username, &username_len);
+    ui->lineEdit_CurrentUser->setText(QString::fromWCharArray(username));
+
+    checkIfProcessElevated();
+    if(fIsElevated)
+    {
+        ui->checkBox_Elevated->setChecked(true);
+    }
+
     oldDACL = NULL;
     entryList = NULL;
+    isAbleToEdit = false;
 }
 
 MainWindow::~MainWindow()
@@ -23,10 +36,37 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+bool MainWindow::checkIfProcessElevated()
+{
+    fIsElevated = false;
+    HANDLE hToken = NULL;
+    TOKEN_ELEVATION elevation;
+    DWORD dwSize;
+
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
+    {
+        goto Cleanup;
+    }
+    if (!GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &dwSize))
+    {
+        goto Cleanup;
+    }
+    fIsElevated = elevation.TokenIsElevated;
+
+Cleanup:
+    if (hToken)
+    {
+        CloseHandle(hToken);
+        hToken = NULL;
+    }
+
+    return fIsElevated;
+}
+
 BOOL MainWindow::SetPrivilege(
-    HANDLE hToken,              // access token handle
-    LPCTSTR lpszPrivilege,   // name of privilege to enable/disable
-    BOOL bEnablePrivilege   // to enable or disable privilege
+    HANDLE hToken,         // access token handle
+    LPCTSTR lpszPrivilege, // name of privilege to enable/disable
+    BOOL bEnablePrivilege  // to enable or disable privilege
 )
 {
     TOKEN_PRIVILEGES tp;
@@ -792,6 +832,28 @@ void MainWindow::cleanupGlobals()
     entryCount = 0;
 }
 
+void MainWindow::checkOwner(QString owner)
+{
+    PSID pSID = NULL, pSID_admin = NULL;
+
+    if(owner == ui->lineEdit_CurrentUser->text())
+    {
+        isAbleToEdit = true;
+    }
+    else
+    {
+        pSID = usernameToSid(owner);
+        ConvertStringSidToSid(L"S-1-5-32-544", &pSID_admin);
+        if(fIsElevated && EqualSid(pSID, pSID_admin))
+        {
+            isAbleToEdit = true;
+        }
+        isAbleToEdit = false;
+        LocalFree(pSID);
+        LocalFree(pSID_admin);
+    }
+}
+
 void MainWindow::on_pushButton_OpenDirectory_clicked()
 {
     cleanupGlobals();
@@ -806,6 +868,7 @@ void MainWindow::on_pushButton_OpenDirectory_clicked()
     isFile = false;
     ui->lineEdit_FileName->setText(fileName);
     ui->lineEdit_Owner->setText(getOwner());
+    checkOwner(ui->lineEdit_Owner->text());
     showACL();
 }
 
@@ -821,6 +884,7 @@ void MainWindow::on_pushButton_OpenFile_clicked()
     isFile = true;
     ui->lineEdit_FileName->setText(fileName);
     ui->lineEdit_Owner->setText(getOwner());
+    checkOwner(ui->lineEdit_Owner->text());
     showACL();
 }
 
@@ -852,14 +916,12 @@ void MainWindow::on_pushButton_New_clicked()
 
 void MainWindow::on_pushButton_Save_clicked()
 {
+    if(!isAbleToEdit)
+    {
+        return;
+    }
     if(saveACE())
     {
-        ui->pushButton_New->setEnabled(true);
-        ui->widget_Container->setEnabled(false);
-        ui->pushButton_Save->setEnabled(false);
-        ui->pushButton_Cancel->setEnabled(false);
-        ui->tableWidget_ACL->setEnabled(true);
-
         ui->pushButton_New->setEnabled(true);
         ui->widget_Container->setEnabled(false);
         ui->pushButton_Save->setEnabled(false);
@@ -884,7 +946,11 @@ void MainWindow::on_tableWidget_ACL_itemDoubleClicked(QTableWidgetItem *item)
     }
 
     ui->widget_Container->setEnabled(true);
-    ui->pushButton_Save->setEnabled(true);
+
+    if(isAbleToEdit)
+    {
+        ui->pushButton_Save->setEnabled(true);
+    }
     ui->pushButton_Cancel->setEnabled(true);
     ui->pushButton_New->setEnabled(false);
 

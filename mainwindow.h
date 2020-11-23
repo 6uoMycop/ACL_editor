@@ -47,13 +47,17 @@ private:
 
     QString              fileName;
     bool                 isFile;
+    bool                 isAbleToEdit;
+    bool                 fIsElevated;
     PSECURITY_DESCRIPTOR pSD = NULL;
     PEXPLICIT_ACCESS     entryList;
     PACL                 oldDACL = NULL;
     ULONG                entryCount;
     int                  selectedRow;
 
+    bool                 checkIfProcessElevated();
     BOOL                 SetPrivilege(HANDLE hToken, LPCTSTR lpszPrivilege, BOOL bEnablePrivilege);
+    void                 checkOwner(QString owner);
     QString              sidToUsername(PSID pSid);
     PSID                 usernameToSid(QString username);
     QString              getOwner();
